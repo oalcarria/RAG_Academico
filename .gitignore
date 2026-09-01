@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Secrets
+.env
+
+# Runtime data: uploaded PDFs and the generated vector index.
+# This is per-deployment content (and may include copyrighted/personal
+# material students uploaded), so it doesn't belong in version control.
+data/uploads/*
+data/vector_store/*
+!data/uploads/.gitkeep
+!data/vector_store/.gitkeep
+
+# Downloaded voice models for Piper TTS (large binaries, fetched per the
+# README instructions rather than committed).
+models/*.onnx
+models/*.onnx.json
+
+# Editor/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local dev tooling config (machine-specific paths)
+.claude/

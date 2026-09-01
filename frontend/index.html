@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Asistente RAG · Pregunta a tus documentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="aurora" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <span class="blob blob-3"></span>
+  </div>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v3" />
+            <rect x="4" y="6" width="16" height="12" rx="4" />
+            <circle cx="9" cy="12" r="1.4" fill="currentColor" stroke="none" />
+            <circle cx="15" cy="12" r="1.4" fill="currentColor" stroke="none" />
+            <path d="M2 11v3M22 11v3" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Pregunta a tus documentos</h1>
+          <p>Sube tus PDFs y pregunta por texto o por voz</p>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <span class="pill" id="kb-pill" hidden>
+          <span class="pill-dot" aria-hidden="true"></span>
+          <span id="kb-count">0 fragmentos</span>
+        </span>
+        <button id="reset-btn" class="btn btn-ghost" type="button">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" />
+          </svg>
+          Empezar de cero
+        </button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="card docs-panel">
+        <div class="card-head">
+          <span class="step">1</span>
+          <h2>Tus documentos</h2>
+        </div>
+
+        <label class="dropzone" id="dropzone" for="pdf-input">
+          <input type="file" id="pdf-input" accept="application/pdf" multiple hidden />
+          <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 16V4" /><path d="m7 9 5-5 5 5" />
+            <path d="M20 16v2a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-2" />
+          </svg>
+          <strong>Arrastra aquí tus PDFs</strong>
+          <span>o haz clic para seleccionarlos</span>
+        </label>
+
+        <ul class="file-list" id="file-list"></ul>
+
+        <button id="upload-btn" class="btn btn-primary btn-block" type="button" disabled>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 19V6" /><path d="m6 12 6-6 6 6" />
+          </svg>
+          <span id="upload-btn-label">Subir documentos</span>
+        </button>
+
+        <p id="upload-status" class="status" role="status"></p>
+
+        <div class="docs-loaded" id="docs-loaded" hidden>
+          <h3>En la base de conocimiento</h3>
+          <ul id="loaded-list"></ul>
+        </div>
+      </aside>
+
+      <section class="card chat-panel">
+        <div class="card-head">
+          <span class="step">2</span>
+          <h2>Haz tu pregunta</h2>
+        </div>
+
+        <div id="chat-log" class="chat-log" aria-live="polite">
+          <div class="empty-state" id="empty-state">
+            <div class="empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+            <h3>Todavía no has preguntado nada</h3>
+            <p>Sube tus PDFs y prueba con una de estas ideas:</p>
+            <div class="suggestions">
+              <button class="chip" type="button" data-q="Haz un resumen de los puntos principales del documento.">Resume los puntos principales</button>
+              <button class="chip" type="button" data-q="Explícame los conceptos más importantes con un ejemplo sencillo.">Explícame los conceptos clave</button>
+              <button class="chip" type="button" data-q="¿Qué preguntas de examen podrían salir sobre este contenido?">Posibles preguntas de examen</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer">
+          <div class="composer-input">
+            <input type="text" id="question-input" placeholder="Escribe tu pregunta aquí..." autocomplete="off" />
+            <button id="mic-btn" class="btn-icon mic" type="button" title="Preguntar por voz" aria-label="Preguntar por voz">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="2" width="6" height="12" rx="3" />
+                <path d="M5 10a7 7 0 0 0 14 0" /><path d="M12 17v5" />
+              </svg>
+            </button>
+          </div>
+          <button id="send-btn" class="btn btn-primary btn-send" type="button" aria-label="Enviar pregunta">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m5 12 14-7-5 14-2.5-5.5z" />
+            </svg>
+            <span class="btn-send-text">Enviar</span>
+          </button>
+        </div>
+
+        <p id="ask-status" class="status" role="status"></p>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="alert" hidden></div>
+  <audio id="tts-audio" hidden></audio>
+
+  <script src="app.js"></script>
+</body>
+</html>
