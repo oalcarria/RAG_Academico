@@ -147,18 +147,3 @@ Todo esto se ajusta en `.env` (ver `.env.example`):
 
 La estrategia de troceado está en [backend/rag.py](backend/rag.py), función
 `build_chunks`.
-
-## Problemas conocidos
-
-- **Rutas con acentos en Windows**: el espeak-ng que incorpora Piper no sabe
-  abrir rutas con caracteres no ASCII (por ejemplo un usuario llamado
-  `Óscar`) y, en vez de dar un error, tira el proceso entero del servidor.
-  `backend/tts.py` lo evita usando la ruta corta 8.3; si tu unidad tiene
-  desactivada la generación de nombres 8.3, mueve el proyecto a una ruta sin
-  acentos.
-- **Wheels en Windows**: algunas librerías con extensiones en C++
-  (`chroma-hnswlib`, versiones antiguas de `piper-tts`) no tienen wheel para
-  Python 3.13 y exigen compilador. Por eso el proyecto evita esas
-  dependencias.
-- El primer arranque tarda más porque se descargan los modelos de embeddings
-  y de Whisper.
