@@ -10,8 +10,20 @@ answers back.
   uses Groq's OpenAI-compatible endpoint at `https://api.groq.com/openai/v1`).
   Config lives in `backend/config.py` (`GROQ_API_KEY`, `GROQ_MODEL`).
 - **Embeddings**: local, via `sentence-transformers`
-  (`paraphrase-multilingual-MiniLM-L12-v2`), so ingestion doesn't depend on a
-  cloud embeddings API.
+  (`intfloat/multilingual-e5-small`), so ingestion doesn't depend on a cloud
+  embeddings API. e5 needs the `query: ` / `passage: ` prefixes it was trained
+  with — they live in `EMBEDDING_QUERY_PREFIX` / `EMBEDDING_PASSAGE_PREFIX`.
+  It replaced `paraphrase-multilingual-MiniLM-L12-v2`, whose 128-token window
+  truncated roughly a quarter of every 120-word chunk.
+- **PDF text extraction: pypdf.** Measured against PyMuPDF (equivalent output)
+  and Firecrawl's `pdf-inspector` on this corpus: pdf-inspector extracted 11%
+  less text overall (35% less on one deck) and its page indices were off by
+  one, which would produce wrong page citations. Don't swap the extractor
+  without re-running that comparison.
+- **Chunking**: a sliding window over the whole document (`CHUNK_SIZE` words,
+  `CHUNK_OVERLAP` overlap), not per page. Slide decks hold ~30 words a page,
+  so page-sized chunks were too small to answer anything and title-only slides
+  ranked highly while carrying no information.
 - **Vector store**: hand-rolled flat index in `backend/rag.py` (numpy cosine
   similarity + a JSON metadata sidecar), persisted under `data/vector_store`.
   Not Chroma/FAISS — `chroma-hnswlib` and similar have no prebuilt Windows
@@ -21,7 +33,11 @@ answers back.
 - **Speech-to-text**: local `faster-whisper` (`backend/stt.py`), CPU, `small`
   model size by default.
 - **Text-to-speech**: local Piper (`backend/tts.py`), Spanish voice model
-  loaded from `PIPER_MODEL_PATH`.
+  loaded from `PIPER_MODEL_PATH`. Piper's bundled espeak-ng is C code that
+  cannot open paths containing non-ASCII characters on Windows: instead of
+  raising, it falls back to a path baked into the wheel and aborts the whole
+  process, killing the server. `backend/tts.py` passes the 8.3 short path for
+  that reason — keep that workaround.
 - **Deployment**: runs locally on a laptop/server during the visit (no cloud
   hosting needed); only the Groq LLM calls require internet, which is expected
   to be available on-site.

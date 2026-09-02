@@ -43,7 +43,13 @@ permite buscar por significado y no solo por palabras exactas.
 
 - **LLM**: [Groq](https://console.groq.com) (API compatible con OpenAI, muy
   rápida). Es la única parte que necesita internet.
-- **Embeddings**: locales, con `sentence-transformers` (modelo multilingüe).
+- **Embeddings**: locales, con `sentence-transformers`
+  (`intfloat/multilingual-e5-small`, multilingüe, ventana de 512 tokens).
+- **Extracción de PDF**: `pypdf`. Se comparó con PyMuPDF (resultados
+  equivalentes) y con `pdf-inspector` de Firecrawl, que extrajo un 11% menos
+  de texto y numeraba mal las páginas.
+- **Troceado**: ventana deslizante sobre el documento completo, no página a
+  página, para que cada fragmento sea autosuficiente.
 - **Base vectorial**: almacén propio simple (numpy + JSON) en
   `data/vector_store`. Se evitó Chroma porque su dependencia
   `chroma-hnswlib` no tiene wheel para Windows + Python 3.13 y exige
@@ -132,9 +138,27 @@ funcione bien).
 
 Todo esto se ajusta en `.env` (ver `.env.example`):
 
-- `TOP_K`: fragmentos de contexto recuperados por pregunta (por defecto 4).
+- `TOP_K`: fragmentos de contexto recuperados por pregunta (por defecto 8).
+- `CHUNK_SIZE` / `CHUNK_OVERLAP`: tamaño y solapamiento de los fragmentos, en
+  palabras (por defecto 120 / 40). Al cambiarlos, el índice existente se
+  invalida y se reconstruye solo: hay que volver a subir los PDFs.
 - `WHISPER_MODEL_SIZE`: tamaño del modelo de voz→texto (`tiny`/`base`/`small`/`medium`).
 - `EMBEDDING_MODEL` / `GROQ_MODEL` / `PIPER_MODEL_PATH`: cambiar los modelos usados.
 
-El tamaño de los fragmentos (`chunk_size`, `overlap`) está en
-[backend/rag.py](backend/rag.py), función `chunk_text`.
+La estrategia de troceado está en [backend/rag.py](backend/rag.py), función
+`build_chunks`.
+
+## Problemas conocidos
+
+- **Rutas con acentos en Windows**: el espeak-ng que incorpora Piper no sabe
+  abrir rutas con caracteres no ASCII (por ejemplo un usuario llamado
+  `Óscar`) y, en vez de dar un error, tira el proceso entero del servidor.
+  `backend/tts.py` lo evita usando la ruta corta 8.3; si tu unidad tiene
+  desactivada la generación de nombres 8.3, mueve el proyecto a una ruta sin
+  acentos.
+- **Wheels en Windows**: algunas librerías con extensiones en C++
+  (`chroma-hnswlib`, versiones antiguas de `piper-tts`) no tienen wheel para
+  Python 3.13 y exigen compilador. Por eso el proyecto evita esas
+  dependencias.
+- El primer arranque tarda más porque se descargan los modelos de embeddings
+  y de Whisper.

@@ -54,7 +54,8 @@ async def upload_pdfs(files: list[UploadFile] = File(...)):
 async def reset_knowledge_base():
     vector_store.reset()
     for item in config.UPLOAD_DIR.iterdir():
-        if item.is_file():
+        # Leave .gitkeep alone: it is what keeps the empty directory in git.
+        if item.is_file() and not item.name.startswith("."):
             item.unlink()
     return {"status": "ok"}
 
